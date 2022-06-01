@@ -1,0 +1,52 @@
+README 
+	Pipeline for comparing ATACseq
+	Last edited on 06/01/2022 -- GAREEVES
+
+PIPELINE OVERVIEW
+	This pipeline is used to generate several outputs and compile several metadata files comparing data between
+	multiple ATAC-seq libraries.
+	
+	For detailed running instructions and system/package requirements see associated publication:
+	XXXX
+	
+HARDWARE SPECIFICATIONS	
+	The pipeline is designed to work on a MACOSX device (minimum version BigSir 11.4)
+
+TEST CASE
+	Test case data available on associated Figshare:
+	XXXX
+
+------------------------------------------------------------------------------------------	
+DIRECTORY SETUP							|
+	./ATACSeq_Pipeline/					| -- The directory for the pipeline
+		/Input/							| -- The directory for input data
+		/Intermediate/					| -- The directory for intermediate files to delete upon finishing
+		/Output/						| -- The directory for output files for downstream analysis
+		/Figures/						| -- The directory for figures generated from output data						
+										|
+										|										
+REQUIRED FILES							|
+	INPUT DATA							|
+		<Species>_rpkm.txt				| -> Generated in ~/ATACseq_Analysis/2_Peak_Calling/, place in ~/HOME/Data/
+		<Species>_annotations.txt		| -> Generated in ~/ATACseq_Analysis/2_Peak_Calling/, place in ~/HOME/Data/
+		Nfur.<Species>.sing.maf			| -> Generated in ~/Multi_Alignment_Construction/, place in ~/HOME/Data/
+		fish4_WGA.maf					| -> Generated in ~/Multi_Alignment_Construction/, place in ~/HOME/Data/
+		Master_DE_Dia_Down_Peak.bed		| -> Generated in ~/ATACseq_Analysis/2_Peak_Calling/, place in ~/HOME/Data/
+		Master_DE_Dia_Down_Peak.bed		| -> Generated in ~/ATACseq_Analysis/2_Peak_Calling/, place in ~/HOME/Data/
+										|
+	SCRIPTS								|
+		Killifish_ATACseq_Pipeline.py	| -> placed in ~/ATACSeq_Pipeline/
+		Killifish_ATACseq_Pipeline.R	| -> placed in ~/ATACSeq_Pipeline/
+										|	
+PRE-RUNNING INSTRUCTIONS				|
+	Path update							| Add paths to all packages are in your .bashrc/.bash_profile,
+										|
+	Script updates						|
+		ATACseq_Conservation.py			| Update the current HOME directory path on line 22
+										| if required packages are set to PATH do nothing, otherwise update path to packages on line 23
+										| Adjust header names and data field count for 'RPKM_master' on lines 29-48
+										| Adjust effective genomes sizes for on lines 54-58
+										|
+										|
+------------------------------------------------------------------------------------------
+		
