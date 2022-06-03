@@ -13,6 +13,7 @@ library("ComplexHeatmap")
 library("circlize")
 library("gplots")
 library("dplyr")
+library("stringr")
 
 #Set up command-line argument input
 args = commandArgs(trailingOnly=TRUE)
@@ -25,21 +26,23 @@ INPUT_DIR <- args[2]
 OUTPUT_DIR <- args[3]
 FIGURE_DIR <- args[4]
 
-#Function for reading in motif files for RUN2
+#Function for use in RUN2
 ReadMotifFile = function(motiffile, col.prefix) {
   
-  df = read.table(file=motiffile, head = T, sep = ",")
-  #df = df[, c(1,3,5,7,9, 10:14)]
-  #colnames(df) = c(paste0(col.prefix, ".motif"), paste0(col.prefix, ".pval"), paste0(col.prefix, ".fdr"), paste0(col.prefix, ".fg"), paste0(col.prefix, ".bg"), paste0(col.prefix, ".FC"), paste0(col.prefix, ".logFC"), paste0(col.prefix, ".Escore"), paste0(col.prefix, ".clusterId"), "finalGene")
-  df = df[, c(3,5,7,9, 10:14)]
-  colnames(df) = c(paste0(col.prefix, ".pval"), paste0(col.prefix, ".fdr"), paste0(col.prefix, ".fg"), paste0(col.prefix, ".bg"), paste0(col.prefix, ".FC"), paste0(col.prefix, ".logFC"), paste0(col.prefix, ".Escore"), paste0(col.prefix, ".clusterId"), "finalGene")
+  df = read.delim(file=motiffile, head = T, sep = "\t")
+  df$Motif.Name = str_replace(df$Motif.Name, "/.+", "") # Replace extra things from the motif names
+  df = df[, c(1,3,5)]
+  # Clean up to remove redundant motifs
+  df =  df %>%
+   group_by(Motif.Name) %>%
+   summarise(across(everything(), list(min)))
   
-  df =  df %>% 
-    group_by(finalGene) %>% 
-    summarise(across(everything(), list(min)))
-  
+  colnames(df) = c("Motif", paste0(col.prefix, ".pval"), paste0(col.prefix, ".fdr"))
+   
   return(df)
 }
+
+rm (list = setdiff(ls(), "ReadMotifFile"))
 
 ##################################################################################################
 ##################################################################################################
@@ -119,8 +122,33 @@ if (RUNNER == 'RUN1'){
 ##################################################################################################
 
 if (RUNNER == 'RUN2'){
+  #Diapause
+  diapause = ReadMotifFile(paste(OUTPUT_DIR, "Diapause/knownResults.txt", sep='/'), "diapause")
 
-  
+  #Development
+  development = ReadMotifFile(paste(OUTPUT_DIR, "Development/knownResults.txt", sep='/'), "development")
+
+  #Merge files
+  merged <- Reduce(function(x, y) merge(x, y, by="Motif", all = TRUE), list(development, diapause))
+  merged  = as.data.frame(merged)
+  rownames(merged) = make.unique(merged$Motif)
+
+  #Only keep motifs that are significant in at least one of the conditions
+  diapause.significant = merged[(merged$diapause.fdr <= 0.1 &  merged$development.fdr > 0.1),]
+  development.significant = merged[(merged$diapause.fdr > 0.1 &  merged$development.fdr <= 0.1),]
+  both.significant = merged[(merged$diapause.fdr <= 0.1 &  merged$development.fdr <= 0.1),]
+  toPlot = rbind(diapause.significant, development.significant, both.significant)
+
+  # Plot heatmap with all labels 
+  pdf(paste(FIGURE_DIR, "Combined_significant_motifs.pdf", sep='/'), width = 4, height = 15)
+  Heatmap(as.matrix(toPlot[, c(3, 5)]), 
+        col = colorRamp2(c(0, 0.001, 0.01, 0.05, 0.1, 0.25, 0.45), c("orangered", "tomato", "coral", "orange", "bisque", "gray90", "gray80")), 
+        cluster_rows = F, 
+        cluster_columns = T,
+        show_row_names = T,
+        row_names_gp = gpar(fontsize = 6),
+        row_names_max_width = unit(30, "cm"))
+  dev.off() 
 }
 
 
